@@ -1,0 +1,49 @@
+<!DOCTYPE HTML>
+<html><head><meta charset="utf-8"><title>Extra.Algebra</title><link rel="stylesheet" href="Agda.css"></head><body><pre class="Agda"><a id="1" class="Symbol">{-#</a> <a id="5" class="Keyword">OPTIONS</a> <a id="13" class="Pragma">--cubical</a> <a id="23" class="Symbol">#-}</a>
+
+<a id="28" class="Keyword">module</a> <a id="35" href="Extra.Algebra.html" class="Module">Extra.Algebra</a> <a id="49" class="Keyword">where</a>
+
+<a id="56" class="Keyword">open</a> <a id="61" class="Keyword">import</a> <a id="68" href="Prelude.html" class="Module">Prelude</a>
+
+<a id="77" class="Keyword">open</a> <a id="82" class="Keyword">import</a> <a id="89" href="Cubical.Foundations.SIP.html" class="Module">Cubical.Foundations.SIP</a>
+<a id="113" class="Keyword">import</a> <a id="120" href="Cubical.Structures.Auto.html" class="Module">Cubical.Structures.Auto</a>                 <a id="160" class="Symbol">as</a> <a id="163" class="Module">Auto</a>
+
+
+<a id="170" class="Comment">-- adapting https://agda.github.io/cubical/Cubical.Algebra.Semigroup.Base.html</a>
+
+<a id="MagmaStr"></a><a id="250" href="Extra.Algebra.html#250" class="Function">MagmaStr</a> <a id="259" class="Symbol">:</a> <a id="261" href="Agda.Primitive.html#326" class="Primitive">Type</a> <a id="266" class="Symbol">→</a> <a id="268" href="Agda.Primitive.html#326" class="Primitive">Type</a>
+<a id="273" href="Extra.Algebra.html#250" class="Function">MagmaStr</a> <a id="282" href="Extra.Algebra.html#282" class="Bound">A</a> <a id="284" class="Symbol">=</a> <a id="286" href="Extra.Algebra.html#282" class="Bound">A</a> <a id="288" class="Symbol">→</a> <a id="290" href="Extra.Algebra.html#282" class="Bound">A</a> <a id="292" class="Symbol">→</a> <a id="294" href="Extra.Algebra.html#282" class="Bound">A</a>
+
+<a id="297" class="Comment">-- not having records is unfortunate</a>
+<a id="334" class="Comment">{-
+record IsMagma {A : Type} (_·_ : MagmaStr A) : Type where
+  no-eta-equality
+  constructor ismagma
+
+  field
+    is-set : isSet A
+
+record MagmaStr&#39; (A : Type) : Type where
+  constructor magmastr
+
+  field
+    _·_         : MagmaStr A
+    isMagma     : IsMagma _·_
+
+  infixl 7 _·_
+
+  open IsMagma isMagma public
+-}</a>
+
+<a id="Magma"></a><a id="649" href="Extra.Algebra.html#649" class="Function">Magma</a> <a id="655" class="Symbol">:</a> <a id="657" href="Agda.Primitive.html#326" class="Primitive">Type₁</a>
+<a id="663" href="Extra.Algebra.html#649" class="Function">Magma</a> <a id="669" class="Symbol">=</a> <a id="671" href="Cubical.Foundations.Structure.html#398" class="Function">TypeWithStr</a> <a id="683" href="Agda.Primitive.html#764" class="Primitive">ℓ-zero</a> <a id="690" href="Extra.Algebra.html#250" class="Function">MagmaStr</a>
+
+<a id="700" class="Comment">-- SIP kills levels for now :(</a>
+<a id="MagmaEquivStr"></a><a id="731" href="Extra.Algebra.html#731" class="Function">MagmaEquivStr</a> <a id="745" class="Symbol">=</a> <a id="747" href="Cubical.Structures.Auto.html#8582" class="Macro">Auto.AutoEquivStr</a> <a id="765" href="Extra.Algebra.html#250" class="Function">MagmaStr</a>
+
+<a id="MagmaUnivalentStr"></a><a id="775" href="Extra.Algebra.html#775" class="Function">MagmaUnivalentStr</a> <a id="793" class="Symbol">:</a> <a id="795" href="Cubical.Foundations.SIP.html#1663" class="Function">UnivalentStr</a> <a id="808" class="Symbol">_</a> <a id="810" href="Extra.Algebra.html#731" class="Function">MagmaEquivStr</a>
+<a id="824" href="Extra.Algebra.html#775" class="Function">MagmaUnivalentStr</a> <a id="842" class="Symbol">=</a> <a id="844" href="Cubical.Structures.Auto.html#8869" class="Macro">Auto.autoUnivalentStr</a> <a id="866" href="Extra.Algebra.html#250" class="Function">MagmaStr</a>
+
+<a id="MagmaΣPath"></a><a id="876" href="Extra.Algebra.html#876" class="Function">MagmaΣPath</a> <a id="887" class="Symbol">:</a> <a id="889" class="Symbol">(</a><a id="890" href="Extra.Algebra.html#890" class="Bound">M</a> <a id="892" href="Extra.Algebra.html#892" class="Bound">N</a> <a id="894" class="Symbol">:</a> <a id="896" href="Extra.Algebra.html#649" class="Function">Magma</a><a id="901" class="Symbol">)</a> <a id="903" class="Symbol">→</a> <a id="905" class="Symbol">(</a><a id="906" href="Extra.Algebra.html#890" class="Bound">M</a> <a id="908" href="Cubical.Foundations.SIP.html#1423" class="Function Operator">≃[</a> <a id="911" href="Extra.Algebra.html#731" class="Function">MagmaEquivStr</a> <a id="925" href="Cubical.Foundations.SIP.html#1423" class="Function Operator">]</a> <a id="927" href="Extra.Algebra.html#892" class="Bound">N</a><a id="928" class="Symbol">)</a> <a id="930" href="Agda.Builtin.Cubical.Glue.html#1051" class="Function Operator">≃</a> <a id="932" class="Symbol">(</a><a id="933" href="Extra.Algebra.html#890" class="Bound">M</a> <a id="935" href="Agda.Builtin.Cubical.Path.html#381" class="Function Operator">≡</a> <a id="937" href="Extra.Algebra.html#892" class="Bound">N</a><a id="938" class="Symbol">)</a>
+<a id="940" href="Extra.Algebra.html#876" class="Function">MagmaΣPath</a> <a id="951" class="Symbol">=</a> <a id="953" href="Cubical.Foundations.SIP.html#4382" class="Function">SIP</a> <a id="957" href="Extra.Algebra.html#775" class="Function">MagmaUnivalentStr</a>
+</pre></body></html>

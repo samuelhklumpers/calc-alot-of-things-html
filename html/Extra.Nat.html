@@ -1,0 +1,19 @@
+<!DOCTYPE HTML>
+<html><head><meta charset="utf-8"><title>Extra.Nat</title><link rel="stylesheet" href="Agda.css"></head><body><pre class="Agda"><a id="1" class="Symbol">{-#</a> <a id="5" class="Keyword">OPTIONS</a> <a id="13" class="Pragma">--cubical</a> <a id="23" class="Pragma">--copatterns</a> <a id="36" class="Symbol">#-}</a>
+
+<a id="41" class="Keyword">module</a> <a id="48" href="Extra.Nat.html" class="Module">Extra.Nat</a> <a id="58" class="Keyword">where</a>
+
+<a id="65" class="Keyword">open</a> <a id="70" class="Keyword">import</a> <a id="77" href="Prelude.html" class="Module">Prelude</a>
+<a id="85" class="Keyword">open</a> <a id="90" class="Keyword">import</a> <a id="97" href="Extra.Algebra.html" class="Module">Extra.Algebra</a>
+<a id="111" class="Keyword">open</a> <a id="116" class="Keyword">import</a> <a id="123" href="Extra.Algebra.Definitions.html" class="Module">Extra.Algebra.Definitions</a>
+
+<a id="150" class="Keyword">open</a> <a id="155" class="Keyword">import</a> <a id="162" href="Cubical.Data.Nat.html" class="Module">Cubical.Data.Nat</a>
+
+
+<a id="Magmaℕ"></a><a id="181" href="Extra.Nat.html#181" class="Function">Magmaℕ</a> <a id="188" class="Symbol">:</a> <a id="190" href="Extra.Algebra.html#649" class="Function">Magma</a>
+<a id="196" href="Agda.Builtin.Sigma.html#252" class="Field">fst</a> <a id="200" href="Extra.Nat.html#181" class="Function">Magmaℕ</a> <a id="207" class="Symbol">=</a> <a id="209" href="Agda.Builtin.Nat.html#192" class="Datatype">ℕ</a>
+<a id="211" href="Agda.Builtin.Sigma.html#264" class="Field">snd</a> <a id="215" href="Extra.Nat.html#181" class="Function">Magmaℕ</a> <a id="222" class="Symbol">=</a> <a id="224" href="Agda.Builtin.Nat.html#325" class="Primitive Operator">_+_</a>
+
+<a id="ℕ-assoc"></a><a id="229" href="Extra.Nat.html#229" class="Function">ℕ-assoc</a> <a id="237" class="Symbol">:</a> <a id="239" href="Algebra.Definitions.html#1108" class="Function">Associative</a> <a id="251" href="Agda.Builtin.Cubical.Path.html#381" class="Function Operator">_≡_</a> <a id="255" class="Symbol">(</a><a id="256" href="Agda.Builtin.Sigma.html#264" class="Field">snd</a> <a id="260" href="Extra.Nat.html#181" class="Function">Magmaℕ</a><a id="266" class="Symbol">)</a>
+<a id="268" href="Extra.Nat.html#229" class="Function">ℕ-assoc</a> <a id="276" href="Extra.Nat.html#276" class="Bound">x</a> <a id="278" href="Extra.Nat.html#278" class="Bound">y</a> <a id="280" href="Extra.Nat.html#280" class="Bound">z</a> <a id="282" class="Symbol">=</a> <a id="284" href="Cubical.Data.Equality.html#419" class="Function">sym</a> <a id="288" class="Symbol">(</a><a id="289" href="Cubical.Data.Nat.Properties.html#4253" class="Function">+-assoc</a> <a id="297" href="Extra.Nat.html#276" class="Bound">x</a> <a id="299" href="Extra.Nat.html#278" class="Bound">y</a> <a id="301" href="Extra.Nat.html#280" class="Bound">z</a><a id="302" class="Symbol">)</a> <a id="304" class="Comment">-- why is Cubical like this?</a>
+</pre></body></html>
