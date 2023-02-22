@@ -1,0 +1,185 @@
+<!DOCTYPE HTML>
+<html><head><meta charset="utf-8"><title>MobileOrnaments</title><link rel="stylesheet" href="Agda.css"></head><body><pre class="Agda"><a id="1" class="Markup">```
+</a><a id="5" class="Symbol">{-#</a> <a id="9" class="Keyword">OPTIONS</a> <a id="17" class="Pragma">--cubical</a> <a id="27" class="Symbol">#-}</a>
+
+<a id="32" class="Keyword">module</a> <a id="39" href="MobileOrnaments.html" class="Module">MobileOrnaments</a> <a id="55" class="Keyword">where</a>
+
+<a id="62" class="Keyword">open</a> <a id="67" class="Keyword">import</a> <a id="74" href="Prelude.html" class="Module">Prelude</a> <a id="82" class="Keyword">hiding</a> <a id="89" class="Symbol">(</a><a id="90" href="Cubical.Foundations.Pointed.Base.html#3182" class="InductiveConstructor Operator">⌊_⌋</a><a id="93" class="Symbol">)</a>
+<a id="95" class="Keyword">open</a> <a id="100" class="Keyword">import</a> <a id="107" href="ProgOrn.Ornaments.html" class="Module">ProgOrn.Ornaments</a>
+
+<a id="126" class="Keyword">open</a> <a id="131" class="Keyword">import</a> <a id="138" href="Data.List.html" class="Module">Data.List</a>
+<a id="148" class="Keyword">import</a> <a id="155" href="Data.Vec.html" class="Module">Data.Vec</a> <a id="164" class="Symbol">as</a> <a id="167" class="Module">V</a>
+
+<a id="170" class="Keyword">import</a> <a id="177" href="Cubical.Data.Nat.html" class="Module">Cubical.Data.Nat</a> <a id="194" class="Symbol">as</a> <a id="197" class="Module">N</a>
+<a id="199" class="Keyword">import</a> <a id="206" href="Data.Fin.html" class="Module">Data.Fin</a> <a id="215" class="Symbol">as</a> <a id="218" class="Module">Fin</a>
+<a id="222" class="Keyword">open</a> <a id="227" class="Keyword">import</a> <a id="234" href="Data.Bool.html" class="Module">Data.Bool</a>
+<a id="244" class="Keyword">open</a> <a id="249" class="Keyword">import</a> <a id="256" href="Data.Fin.html" class="Module">Data.Fin</a> <a id="265" class="Keyword">hiding</a> <a id="272" class="Symbol">(</a><a id="273" href="Data.Fin.Base.html#1311" class="Function">toℕ</a><a id="276" class="Symbol">)</a>
+<a id="278" class="Markup">```
+</a><a id="282" class="Background">
+--* The question
+Open question:
+  We have e : ℕ ≃ Leibniz and ℕ = μ NatD, Leibniz = μ LeibnizD,
+  and List A = μ ⌊ Nat-ListOrn ⌋ for Nat-ListOrn : OrnDesc ⊤ ! NatD.
+
+  Where does L-TreeOrn  come from?
+
+
+--* No simple answer
+Clearly there is no L-TreeOrn : OrnDesc ⊤ ! LeibnizD and an e&#39; : List A ≃ Tree A such that e&#39; has e as underlying function.
+Namely length xs = n enforces that size (e&#39; xs) = n, while depth (e&#39; xs) = ceillog n
+Looking at the progression n = 0..3 points out the failure: the 0b constructor carries 0 elements, 1b carries 1, 2b carries 2, so e 3 = 0b 1b 1b carries 2 elements.
+
+The linearity of both types obstructs us from forming trees by ornamenting leibniz.
+Perhaps we can get further by carefully constructing an index type.
+But first, let&#39;s investigate how we can represent branching structures in a linear datatype.
+
+
+--* A small note
+If X and Y are inductives then they&#39;re fixpoints FX = X and GY = Y.
+If X = Y, then at least F and G agree at X i.e. FX = GX.
+E.g. NatF X = 1 + X and BinF X = 1 + X + X,
+but clearly they&#39;re not naturally isomorphic or so.
+
+
+--* Linear chains containing branching data
+For this, we take inspiration from calculating datastructures and the N-ary trees experiment, in which we represent trees by linear chains of ever-growing tuples.
+</a><a id="1576" class="Markup">```
+</a><a id="1580" class="Keyword">open</a> <a id="1585" class="Keyword">import</a> <a id="1592" href="Nary.html" class="Module">Nary</a>
+<a id="1597" class="Markup">```
+</a><a id="1601" class="Background">
+Starting from the simplest (non-trivial) case of 1-2-trees.
+These can either be an empty leaf, a node with 1 element and 2 children, or a node with 2 elements and 2 children.
+We can linearize this by keeping the leaf but changing the types at the nodes.
+At the top node we start with the element type A, but when we encounter a node, we replace this by A × A to represent the branching of the tree.
+
+Let&#39;s consider the case of D : Desc ⊤, in which we seek to represent D by a linearly shaped datatype.
+If we recall the image of datatypes trees, then the obvious approach is to simply split the datatype into levels and carry around the shape of the tree at each level.
+
+Suppose μ D = Zero | One (μ D) | Two (μ D) (μ D),
+then we can imagine representing the term One (Two (One Zero) Zero) as the chain [tt], [[tt]], [[[tt, tt]]], [[[[tt], []]]], [[[[], []]]].
+This representation is a bit clunky and inefficient, but has the advantage of generalizing to different I.
+
+Another representation of trees can be given by chains of functions between finite types. [Sets, Models and Proofs].
+In this case, we have 0 -&gt; 1 -&gt; 2 -&gt; 1 -&gt; 1, where f(x) = y signifies that x is a direct descendant of y.
+(Note that this isn&#39;t optimal because the branches are always ordered)
+
+(Let us ignore the contents of the fields to simplify the process?)
+Suppose we are at some level and have n branches.
+We can describe the chain with only one constructor taking in n accumulated fields, and then summing together the sizes of all recursive constructors.
+
+</a><a id="3134" class="Markup">```
+</a><a id="3138" class="Comment">-- level issue</a>
+<a id="3153" class="Comment">{- data Accumulate : RDesc ⊤ → Type where
+  leaf : ∀ {is : List ⊤}                      → Accumulate (ṿ is)
+  node : ∀ {S D} → (s : S) → Accumulate (D s) → Accumulate (σ S D) -}</a>
+
+<a id="Accumulate"></a><a id="3332" href="MobileOrnaments.html#3332" class="Function">Accumulate</a> <a id="3343" class="Symbol">:</a> <a id="3345" href="ProgOrn.Ornaments.html#686" class="Datatype">RDesc</a> <a id="3351" href="Cubical.Data.Unit.Base.html#171" class="Record">⊤</a> <a id="3353" class="Symbol">→</a> <a id="3355" href="Agda.Primitive.html#326" class="Primitive">Type</a>
+<a id="3360" href="MobileOrnaments.html#3332" class="Function">Accumulate</a> <a id="3371" class="Symbol">(</a><a id="3372" href="ProgOrn.Ornaments.html#727" class="InductiveConstructor">ṿ</a> <a id="3374" href="MobileOrnaments.html#3374" class="Bound">is</a><a id="3376" class="Symbol">)</a>  <a id="3379" class="Symbol">=</a> <a id="3381" href="Cubical.Data.Unit.Base.html#171" class="Record">⊤</a>
+<a id="3383" href="MobileOrnaments.html#3332" class="Function">Accumulate</a> <a id="3394" class="Symbol">(</a><a id="3395" href="ProgOrn.Ornaments.html#759" class="InductiveConstructor">σ</a> <a id="3397" href="MobileOrnaments.html#3397" class="Bound">S</a> <a id="3399" href="MobileOrnaments.html#3399" class="Bound">D</a><a id="3400" class="Symbol">)</a> <a id="3402" class="Symbol">=</a> <a id="3404" href="Agda.Builtin.Sigma.html#166" class="Record">Σ</a> <a id="3406" href="MobileOrnaments.html#3397" class="Bound">S</a> <a id="3408" class="Symbol">λ</a> <a id="3410" href="MobileOrnaments.html#3410" class="Bound">s</a> <a id="3412" class="Symbol">→</a> <a id="3414" href="MobileOrnaments.html#3332" class="Function">Accumulate</a> <a id="3425" class="Symbol">(</a><a id="3426" href="MobileOrnaments.html#3399" class="Bound">D</a> <a id="3428" href="MobileOrnaments.html#3410" class="Bound">s</a><a id="3429" class="Symbol">)</a>
+
+<a id="consize"></a><a id="3432" href="MobileOrnaments.html#3432" class="Function">consize</a> <a id="3440" class="Symbol">:</a> <a id="3442" class="Symbol">(</a><a id="3443" href="MobileOrnaments.html#3443" class="Bound">d</a> <a id="3445" class="Symbol">:</a> <a id="3447" href="ProgOrn.Ornaments.html#686" class="Datatype">RDesc</a> <a id="3453" href="Cubical.Data.Unit.Base.html#171" class="Record">⊤</a><a id="3454" class="Symbol">)</a> <a id="3456" class="Symbol">→</a> <a id="3458" class="Symbol">(</a><a id="3459" href="MobileOrnaments.html#3459" class="Bound">a</a> <a id="3461" class="Symbol">:</a> <a id="3463" href="MobileOrnaments.html#3332" class="Function">Accumulate</a> <a id="3474" href="MobileOrnaments.html#3443" class="Bound">d</a><a id="3475" class="Symbol">)</a> <a id="3477" class="Symbol">→</a> <a id="3479" href="Agda.Builtin.Nat.html#192" class="Datatype">ℕ</a>
+<a id="3481" href="MobileOrnaments.html#3432" class="Function">consize</a> <a id="3489" class="Symbol">(</a><a id="3490" href="ProgOrn.Ornaments.html#727" class="InductiveConstructor">ṿ</a> <a id="3492" href="MobileOrnaments.html#3492" class="Bound">is</a><a id="3494" class="Symbol">)</a>  <a id="3497" href="MobileOrnaments.html#3497" class="Bound">a</a> <a id="3499" class="Symbol">=</a> <a id="3501" href="Data.List.Base.html#4879" class="Function">length</a> <a id="3508" href="MobileOrnaments.html#3492" class="Bound">is</a>
+<a id="3511" href="MobileOrnaments.html#3432" class="Function">consize</a> <a id="3519" class="Symbol">(</a><a id="3520" href="ProgOrn.Ornaments.html#759" class="InductiveConstructor">σ</a> <a id="3522" href="MobileOrnaments.html#3522" class="Bound">S</a> <a id="3524" href="MobileOrnaments.html#3524" class="Bound">D</a><a id="3525" class="Symbol">)</a> <a id="3527" href="MobileOrnaments.html#3527" class="Bound">a</a> <a id="3529" class="Symbol">=</a> <a id="3531" href="MobileOrnaments.html#3432" class="Function">consize</a> <a id="3539" class="Symbol">(</a><a id="3540" href="MobileOrnaments.html#3524" class="Bound">D</a> <a id="3542" class="Symbol">(</a><a id="3543" href="Agda.Builtin.Sigma.html#252" class="Field">fst</a> <a id="3547" href="MobileOrnaments.html#3527" class="Bound">a</a><a id="3548" class="Symbol">))</a> <a id="3551" class="Symbol">(</a><a id="3552" href="Agda.Builtin.Sigma.html#264" class="Field">snd</a> <a id="3556" href="MobileOrnaments.html#3527" class="Bound">a</a><a id="3557" class="Symbol">)</a>
+
+<a id="nested"></a><a id="3560" href="MobileOrnaments.html#3560" class="Function">nested</a> <a id="3567" class="Symbol">:</a> <a id="3569" href="ProgOrn.Ornaments.html#841" class="Function">Desc</a> <a id="3574" href="Cubical.Data.Unit.Base.html#171" class="Record">⊤</a> <a id="3576" class="Symbol">→</a> <a id="3578" href="ProgOrn.Ornaments.html#841" class="Function">Desc</a> <a id="3583" href="Agda.Builtin.Nat.html#192" class="Datatype">ℕ</a>
+<a id="3585" href="MobileOrnaments.html#3560" class="Function">nested</a> <a id="3592" href="MobileOrnaments.html#3592" class="Bound">d</a> <a id="3594" href="MobileOrnaments.html#3594" class="Bound">n</a> <a id="3596" class="Symbol">=</a> <a id="3598" href="ProgOrn.Ornaments.html#759" class="InductiveConstructor">σ</a> <a id="3600" class="Symbol">(</a><a id="3601" href="Data.Vec.Base.html#1051" class="Datatype">V.Vec</a> <a id="3607" class="Symbol">(</a><a id="3608" href="MobileOrnaments.html#3332" class="Function">Accumulate</a> <a id="3619" class="Symbol">(</a><a id="3620" href="MobileOrnaments.html#3592" class="Bound">d</a> <a id="3622" href="Agda.Builtin.Unit.html#201" class="InductiveConstructor">tt</a><a id="3624" class="Symbol">))</a> <a id="3627" href="MobileOrnaments.html#3594" class="Bound">n</a><a id="3628" class="Symbol">)</a> <a id="3630" class="Symbol">λ</a> <a id="3632" href="MobileOrnaments.html#3632" class="Bound">a</a> <a id="3634" class="Symbol">→</a>
+  <a id="3638" class="Keyword">let</a> <a id="3642" href="MobileOrnaments.html#3642" class="Bound">m</a> <a id="3644" class="Symbol">=</a> <a id="3646" href="Data.Vec.Base.html#5247" class="Function">V.foldl</a> <a id="3654" class="Symbol">(λ</a> <a id="3657" href="MobileOrnaments.html#3657" class="Bound">_</a> <a id="3659" class="Symbol">→</a> <a id="3661" href="Agda.Builtin.Nat.html#192" class="Datatype">ℕ</a><a id="3662" class="Symbol">)</a> <a id="3664" class="Symbol">(λ</a> <a id="3667" href="MobileOrnaments.html#3667" class="Bound">xs</a> <a id="3670" href="MobileOrnaments.html#3670" class="Bound">x</a> <a id="3672" class="Symbol">→</a> <a id="3674" href="MobileOrnaments.html#3432" class="Function">consize</a> <a id="3682" class="Symbol">(</a><a id="3683" href="MobileOrnaments.html#3592" class="Bound">d</a> <a id="3685" href="Agda.Builtin.Unit.html#201" class="InductiveConstructor">tt</a><a id="3687" class="Symbol">)</a> <a id="3689" href="MobileOrnaments.html#3670" class="Bound">x</a> <a id="3691" href="Agda.Builtin.Nat.html#325" class="Primitive Operator">N.+</a> <a id="3695" href="MobileOrnaments.html#3667" class="Bound">xs</a><a id="3697" class="Symbol">)</a> <a id="3699" class="Number">0</a> <a id="3701" href="MobileOrnaments.html#3632" class="Bound">a</a>
+  <a id="3705" class="Keyword">in</a> <a id="3708" href="ProgOrn.Ornaments.html#759" class="InductiveConstructor">σ</a> <a id="3710" class="Symbol">(</a><a id="3711" href="Data.Fin.Base.html#1203" class="Datatype">Fin</a> <a id="3715" href="MobileOrnaments.html#3642" class="Bound">m</a> <a id="3717" class="Symbol">→</a> <a id="3719" href="Data.Fin.Base.html#1203" class="Datatype">Fin</a> <a id="3723" href="MobileOrnaments.html#3594" class="Bound">n</a><a id="3724" class="Symbol">)</a> <a id="3726" class="Symbol">(λ</a> <a id="3729" href="MobileOrnaments.html#3729" class="Bound">_</a> <a id="3731" class="Symbol">→</a> <a id="3733" href="ProgOrn.Ornaments.html#727" class="InductiveConstructor">ṿ</a> <a id="3735" href="Data.List.Base.html#5040" class="Function Operator">[</a> <a id="3737" href="MobileOrnaments.html#3642" class="Bound">m</a> <a id="3739" href="Data.List.Base.html#5040" class="Function Operator">]</a><a id="3740" class="Symbol">)</a>
+
+<a id="3743" class="Comment">{-
+module _ (SomeD : Desc ⊤) where
+  Some = μ SomeD tt
+  Nest = μ (nested SomeD) 1
+  
+  nest : Some → Nest
+  nest (con x) = {!x!}
+-}</a>
+<a id="3876" class="Markup">```
+</a><a id="3880" class="Background">
+This isn&#39;t shockingly useful, doesn&#39;t support indices (yet) and still reproduces a chunk of the branching in the index type.
+However, it does indicate how we can force the morally correct transport of List over ℕ ≃ Leibniz onto something which is both linear but contains a Tree.
+
+A short demonstration of what the nested datatype _can_ do:
+</a><a id="4222" class="Markup">```
+</a><a id="4226" class="Keyword">data</a> <a id="Three"></a><a id="4231" href="MobileOrnaments.html#4231" class="Datatype">Three</a> <a id="4237" class="Symbol">:</a> <a id="4239" href="Agda.Primitive.html#326" class="Primitive">Set</a> <a id="4243" class="Keyword">where</a>
+  <a id="Three.three1"></a><a id="4251" href="MobileOrnaments.html#4251" class="InductiveConstructor">three1</a> <a id="4258" class="Symbol">:</a> <a id="4260" href="MobileOrnaments.html#4231" class="Datatype">Three</a>
+  <a id="Three.three2"></a><a id="4268" href="MobileOrnaments.html#4268" class="InductiveConstructor">three2</a> <a id="4275" class="Symbol">:</a> <a id="4277" href="MobileOrnaments.html#4231" class="Datatype">Three</a>
+  <a id="Three.three3"></a><a id="4285" href="MobileOrnaments.html#4285" class="InductiveConstructor">three3</a> <a id="4292" class="Symbol">:</a> <a id="4294" href="MobileOrnaments.html#4231" class="Datatype">Three</a>
+
+<a id="Squiggle"></a><a id="4301" href="MobileOrnaments.html#4301" class="Function">Squiggle</a> <a id="4310" class="Symbol">:</a> <a id="4312" href="ProgOrn.Ornaments.html#841" class="Function">Desc</a> <a id="4317" href="Cubical.Data.Unit.Base.html#171" class="Record">⊤</a>
+<a id="4319" href="MobileOrnaments.html#4301" class="Function">Squiggle</a> <a id="4328" href="Agda.Builtin.Unit.html#201" class="InductiveConstructor">tt</a> <a id="4331" class="Symbol">=</a> <a id="4333" href="ProgOrn.Ornaments.html#759" class="InductiveConstructor">σ</a> <a id="4335" href="MobileOrnaments.html#4231" class="Datatype">Three</a> <a id="4341" class="Symbol">λ</a>
+  <a id="4345" class="Symbol">{</a> <a id="4347" href="MobileOrnaments.html#4251" class="InductiveConstructor">three1</a> <a id="4354" class="Symbol">→</a> <a id="4356" href="ProgOrn.Ornaments.html#727" class="InductiveConstructor">ṿ</a> <a id="4358" href="Agda.Builtin.List.html#185" class="InductiveConstructor">[]</a>
+  <a id="4363" class="Symbol">;</a> <a id="4365" href="MobileOrnaments.html#4268" class="InductiveConstructor">three2</a> <a id="4372" class="Symbol">→</a> <a id="4374" href="ProgOrn.Ornaments.html#727" class="InductiveConstructor">ṿ</a> <a id="4376" href="Data.List.Base.html#5040" class="Function Operator">[</a> <a id="4378" href="Agda.Builtin.Unit.html#201" class="InductiveConstructor">tt</a> <a id="4381" href="Data.List.Base.html#5040" class="Function Operator">]</a>
+  <a id="4385" class="Symbol">;</a> <a id="4387" href="MobileOrnaments.html#4285" class="InductiveConstructor">three3</a> <a id="4394" class="Symbol">→</a> <a id="4396" href="ProgOrn.Ornaments.html#727" class="InductiveConstructor">ṿ</a> <a id="4398" class="Symbol">(</a><a id="4399" href="Agda.Builtin.Unit.html#201" class="InductiveConstructor">tt</a> <a id="4402" href="Agda.Builtin.List.html#200" class="InductiveConstructor Operator">∷</a>  <a id="4405" href="Agda.Builtin.Unit.html#201" class="InductiveConstructor">tt</a> <a id="4408" href="Agda.Builtin.List.html#200" class="InductiveConstructor Operator">∷</a> <a id="4410" href="Agda.Builtin.List.html#185" class="InductiveConstructor">[]</a><a id="4412" class="Symbol">)</a> <a id="4414" class="Symbol">}</a>
+
+<a id="SquiggleFlat"></a><a id="4417" href="MobileOrnaments.html#4417" class="Function">SquiggleFlat</a> <a id="4430" class="Symbol">:</a> <a id="4432" href="ProgOrn.Ornaments.html#686" class="Datatype">RDesc</a> <a id="4438" href="Agda.Builtin.Nat.html#192" class="Datatype">ℕ</a>
+<a id="4440" href="MobileOrnaments.html#4417" class="Function">SquiggleFlat</a> <a id="4453" class="Symbol">=</a> <a id="4455" href="MobileOrnaments.html#3560" class="Function">nested</a> <a id="4462" href="MobileOrnaments.html#4301" class="Function">Squiggle</a> <a id="4471" class="Number">1</a>
+<a id="4473" class="Markup">```
+</a><a id="4477" class="Background">
+--* ℕ ≃ L
+With this in mind (i.e. we can cram structure into the index if necessary), we can revisit the equivalence ℕ ≃ Leibniz.
+</a><a id="4608" class="Markup">```
+</a><a id="4612" class="Keyword">open</a> <a id="4617" class="Keyword">import</a> <a id="4624" href="Leibniz.Properties.html" class="Module">Leibniz.Properties</a>
+<a id="4643" class="Markup">```
+</a><a id="4647" class="Background">
+Unfolding this equivalence, we see that if we are to have length xs ≡ size (e&#39; xs),
+then for the algebra defining e we must have that the action of the algebra on Leibniz pushes the appropriate number of branches into the index of the Tree.
+
+Ideally, we would like to combine the algebra (0b, bsuc) with adding a single element like cons into an appropriate ornamental description, with algebra, on Leibniz.
+Let&#39;s write our wishlist first, and transform this into something workable later.
+
+We have
+  N   = zero | suc
+  L A = nil  | cons A (L A)
+
+the diagram to keep in mind is
+
+       L A ..  ?
+        |      .
+ length |      .
+        v      .
+        N ---&gt; B
+           e
+
+Clearly ?, let&#39;s name it T A, will get the same number of constructors as B
+  B   = 0b     | B 1b    | B 2b
+  T A = leaf ? | node1 ? | node2 ?
+
+Let&#39;s construct the wanted equivalence and T A simultaneously
+
+           e&#39;
+       L A -&gt; T A
+        |      |
+ length |  ↻   | size
+        v      v
+        N ---&gt; B
+           e
+
+For size to be forgetful it should be something like
+  size (leaf ?)  = 0b
+  size (node1 ?) = ? (size ?) 1b
+  size (node2 ?) = ? (size ?) 2b
+
+Since length [] = zero and e zero = 0b, we find size (e&#39; []) = 0b, so e&#39; [] = leaf ?
+
+Suppose e (length xs) = ? 1b = size (e&#39; xs) = size (node1 ?)
+Suppose e (length xs) = ? 2b = size (e&#39; xs) = size (node2 ?)
+
+Keep in mind that T A needs to be a F X = 1 + A × X algebra,
+so we need a prep&#39; : 1 + A × T A → T A and this better comply with cons&#39;:
+  e&#39; (cons&#39; (inl tt))       = prep&#39; (inl tt)          = leaf
+  e&#39; (cons&#39; (inr (x , xs))) = prep&#39; (inr (x , e&#39; xs))
+
+this defines prep : A → T A → T A for which
+  bsuc (size (e&#39; xs)) = bsuc (e (length xs)) = e (suc (length xs)) = e (length (cons x xs)) = size (e&#39; (cons x xs)) = size (prep x (e&#39; xs))
+
+this binds the size of the result of prep to a number again, which by the forgetful property of size enforces some constructors, hence
+  prep x (leaf ?)  = node1 ?
+  prep x (node1 ?) = node2 ?
+  prep x (node2 ?) = node1 ?
+
+From this, it&#39;s pretty clear from our perspective how to fill in the constructors of T A,
+but it is not conclusive yet.
+
+We might make some way flattening the shapes even harder (like Normal functors for Traversables a la McBride, but then with heterogeneous vectors and more &quot;sizes&quot;)
+</a></pre></body></html>
